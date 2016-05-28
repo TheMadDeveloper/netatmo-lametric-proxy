@@ -112,10 +112,10 @@ time_format = config.get('display','time_format')
 
 # Post data to LaMetric
 lametric = lametric.Setup()
-lametric.addTextFrame('i2870',outdoor['temperature'])
+lametric.addTextFrame(icon['temp'],outdoor['temperature'])
 lametric.addSparklineFrame(hist_temp)
 lametric.addTextFrame(icon['humi'],outdoor['humidity'])
 lametric.addTextFrame(icon[outdoor['trend']],outdoor['pressure'])
 lametric.addTextFrame(icon['sunrise'],rise_time.strftime(time_format))
 lametric.addTextFrame(icon['sunset'],set_time.strftime(time_format))
-#lametric.push(app_id, access_token)
+lametric.push(app_id, access_token)
