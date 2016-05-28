@@ -10,6 +10,7 @@ import time
 import pytz
 import json
 import ConfigParser
+import os.path
 
 # Netatmo / LaMetric Proxy
 # Author : Stanislav Likavcan, likavcan@gmail.com
@@ -19,10 +20,10 @@ import ConfigParser
 # */10 * * * * /home/lametric/updateLaMetric.py
 # Don't forget to create an app within both Netatmo and LaMetric and provide your credentials here:
 
-######################## USER SPECIFIC INFORMATION ######################
+scriptDir = os.path.dirname(os.path.abspath(__file__))
 
 config = ConfigParser.ConfigParser()
-config.read("config.ini")
+config.read("%s/config-tinversion.ini"%(scriptDir))
 
 # Netatmo authentication
 client_id     = config.get('netatmo','client_id')
@@ -40,8 +41,6 @@ temp_units    = config.get('display','temperature_units')
 # Use Celsius unless the config file is attempting to set things to Farenheit
 temp_units = 'C' if temp_units[0].upper() != 'F' else 'F'
 
-#########################################################################
-
 # Initiate Netatmo client
 authorization = lnetatmo.ClientAuth(client_id, client_secret, username, password)
 devList = lnetatmo.DeviceList(authorization)
@@ -50,6 +49,7 @@ theData = devList.lastData()
 # Location GPS coordinates from Netatmo
 lng, lat = devList.locationData()['location']
 
+# Calculate the local timezone offset
 now = datetime.datetime.now()
 utc = get_localzone().localize(now).astimezone(pytz.utc).replace(tzinfo=None)
 
@@ -112,10 +112,10 @@ time_format = config.get('display','time_format')
 
 # Post data to LaMetric
 lametric = lametric.Setup()
-lametric.addTextFrame(icon['temp'],outdoor['temperature'])
+lametric.addTextFrame('i2870',outdoor['temperature'])
 lametric.addSparklineFrame(hist_temp)
 lametric.addTextFrame(icon['humi'],outdoor['humidity'])
 lametric.addTextFrame(icon[outdoor['trend']],outdoor['pressure'])
 lametric.addTextFrame(icon['sunrise'],rise_time.strftime(time_format))
 lametric.addTextFrame(icon['sunset'],set_time.strftime(time_format))
-lametric.push(app_id, access_token)
+#lametric.push(app_id, access_token)
