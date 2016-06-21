@@ -27,7 +27,7 @@ localtime = time.time()
 def main():
 
     config = ConfigParser.ConfigParser()
-    config.read("config.ini")
+    config.read("%s/config.ini"%(scriptDir))
 
     # Netatmo authentication
     client_id     = config.get('netatmo','client_id')
