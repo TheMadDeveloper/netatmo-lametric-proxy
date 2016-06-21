@@ -23,7 +23,7 @@ import ConfigParser
 scriptDir = os.path.dirname(os.path.abspath(__file__))
 
 config = ConfigParser.ConfigParser()
-config.read("config.ini")
+config.read("%s/config-tinversion.ini"%(scriptDir))
 
 # Netatmo authentication
 client_id     = config.get('netatmo','client_id')
@@ -81,10 +81,14 @@ now   = time.time();
 # Retrieve data for last 24hours
 last_day  = now - 36 * 3600;
 
+print "Temps from %s to %s" % (last_day, now)
+
 measure = devList.getMeasure(station_id, '1hour', 'Temperature', module_id, date_begin = last_day, date_end = now, optimize = True)
 
 # Convert temperature values returned by Netatmo to simple field
 hist_temp = [int(round(v[0],0)) for v in measure['body'][0]['value']]
+
+print theData
 
 # Retrieve current sensor data
 outdoor = {}
@@ -97,24 +101,32 @@ if temp_units == 'F' :
     indoorTemp = indoorTemp * 1.8 + 32
     outdoorTemp = outdoorTemp * 1.8 + 32
 
+dt =  outdoorTemp - indoorTemp
+
 outdoor['temperature'] = str(outdoorTemp) + "°" + temp_units
 outdoor['humidity']    = str(theData[module_name]['Humidity'])+'%'
 outdoor['pressure']    = str(theData[station_name]['Pressure'])+'mb'
 outdoor['trend']       = str(theData[station_name]['pressure_trend'])
 
-print outdoor
+print "Temperature Difference %s°%s" % (indoorTemp - outdoorTemp, temp_units)
 
-# Icons definition
-icon = {'temp': 'i2355', 'tempC': 'i2056', 'humi': 'i863', 'stable': 'i401', 'up': 'i120', 'down': 'i124', 'sunrise': 'a485', 'sunset': 'a486'}
+dataFile = "%s/data.json" % (scriptDir)
 
-time_format = config.get('display','time_format')
+with open(dataFile,'r') as f:
+    prev = json.load(f)
+    print "Last reading %s %s @ %s seconds ago" % (prev[u'dt'], prev[u'unit'], now - prev[u'time'])
 
-# Post data to LaMetric
-lametric = lametric.Setup()
-lametric.addTextFrame(icon['temp'],outdoor['temperature'])
-lametric.addSparklineFrame(hist_temp)
-lametric.addTextFrame(icon['humi'],outdoor['humidity'])
-lametric.addTextFrame(icon[outdoor['trend']],outdoor['pressure'])
-lametric.addTextFrame(icon['sunrise'],rise_time.strftime(time_format))
-lametric.addTextFrame(icon['sunset'],set_time.strftime(time_format))
-lametric.push(app_id, access_token)
+with open(dataFile,'w') as f:
+    json.dump({'dt': dt, "unit": temp_units, "time": now}, f)
+
+sign = '+' if dt > 0 else ''
+dtDisplay = "%s%.1f%s" % (sign,dt, "°"+temp_units)
+msg = "Warmer Outside" if sign == '+' else "Cooler Outside"
+
+if prev[u'dt'] * dt < 0 or True :
+    # Post data to LaMetric
+    lametric = lametric.Setup()
+    lametric.addTextFrame('i2870',msg)
+    lametric.addTextFrame('i2870',dtDisplay)
+    lametric.addSparklineFrame(hist_temp)
+    lametric.push(app_id, access_token)
