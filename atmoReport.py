@@ -191,7 +191,7 @@ def checkTempInversion(dt, temp_units):
         with open(dataFile,'r') as f:
             prev = json.load(f)
             print "Last reading %s %s @ %s seconds ago" % (prev[u'dt'], prev[u'unit'], localtime - prev[u'time'])
-            inversonEvent = prev[u'dt'] * dt < 0
+            inversionEvent = (prev[u'dt'] * dt < 0)
     except ValueError:
         print "No previous reading"
 
